@@ -1,0 +1,370 @@
+ * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0c817b;
+    color: #f8fafc;
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.hero {
+    background-color: #0a6e66;
+    border-bottom: 1px solid #b1c1d8;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+}
+
+.nav .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #bdd7e2;
+    text-decoration: none;
+}
+
+.nav .links a {
+    color: #cbd5e1;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav .links a:hover {
+    color: #98c6da;
+}
+
+.hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 0;
+    min-height: calc(100vh - 80px);
+    justify-content: center;
+}
+
+.about-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 50px;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 40px;
+    float: left;
+    margin: right;
+}
+.container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.container img {
+    max-width: 300px;
+    height: auto;
+
+}
+.about-section img {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 4px solid #38bdf8;
+    object-fit: cover;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    
+}
+
+.about-text {
+    max-width: 550px;
+}
+.about-text h1,h2 {
+    font-size: 3rem;
+    margin-bottom: 2px;
+    color: #e5e8eb;
+}
+
+.about-text p {
+    color: #f6f7fa;
+    font-size: 1.2rem;
+    margin-bottom: 25px;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 28px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 30px;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background-color: #38bdf8;
+    color: #0f172a;
+}
+
+.btn-primary:hover {
+    background-color: #0ea5e9;
+}
+
+.btn-secondary {
+    border: 2px solid #bfc4cc;
+    color: #f8fafc;
+}
+
+.btn-secondary:hover {
+    background-color: #b1b9c4;
+}
+.scroll-down {
+    margin-top: 40px;
+}
+a {
+    text-decoration: none;
+}
+.arrow-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.bouncing-arrow {
+  font-size: 40px;
+  color: #00a896; 
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.about-section {
+    flex-direction: column;
+        text-align: center;
+        gap: 30px;
+}
+    
+    .cta-buttons {
+        justify-content: center;
+    }
+    .scroll-down {
+        position: relative;
+        bottom: auto;
+        margin-top: 40px;
+    }
+.section-container{
+        background-color:#238a85;
+        color: white;
+        box-sizing: border-box;
+        padding: 70px 50px;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+}
+.content {
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+        margin: 0 auto;
+}
+.skills-section {
+  background-color: #2c817d; 
+  font-family: sans-serif;
+  box-sizing: border-box;
+  padding: 70px 50px;
+
+}
+
+
+.skills-title {
+  color: #f5f4f3; 
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.skills-list {
+  list-style: none;
+  padding: 10px;
+  margin: 10;
+  display: flex;
+  flex-wrap: wrap; 
+  gap: 12px;       
+}
+
+.skill-tag {
+  color: #faf9f8;
+  border: 1px solid #59b3ad; 
+  border-radius: 12px;       
+  padding: 10px 20px;        
+  font-size: 0.95rem;
+  font-weight: 500;
+  background-color: transparent;
+}
+.projects {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.section-title {
+  font-size: 2rem;
+  color: #edeff3;
+  margin-bottom: 30px;
+  position: relative;
+}
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+}
+
+.project-card {
+  background: #329b96;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.image-wrapper {
+  width: 100%;
+  height: 280px;
+}
+
+.image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+.project-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.project-content h3 {
+  font-size: 1.25rem;
+  color: #f7f8fa;
+  margin: 0 0 12px 0;
+}
+
+.project-content p {
+  font-size: 0.95rem;
+  color: #f6f8fa;
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+  flex-grow: 1; 
+}
+
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.tag {
+  background-color: #37a59f;
+  color: #f5f7f8;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.links {
+  display: flex;
+  gap: 20px;
+}
+
+.links .link {
+  color: #319795;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.links .link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.skills-section {
+  background-color: #2c817d; 
+  font-family: sans-serif;
+  box-sizing: border-box;
+  padding: 70px 50px;
+
+}
+.contact{
+  background-color:#2b867f;
+  color: white;
+  box-sizing: border-box;
+  padding: 70px 50px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: left;
+
+}
+.content {
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+  margin: 0 auto;
+}
+footer {
+  text-align: center;
+  padding: 12px;
+  color: #f4f8f8;
+    
+}
