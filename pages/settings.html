@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DocuVerify | Settings</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.jpg">
+  <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/css/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
+</head>
+<body>
+  <nav class="sidebar d-flex flex-column p-3">
+    <div class="d-flex align-items-center mb-4 px-2 pt-2"><h4 class="fw-bold mb-0 text-dark"><i class="bi bi-shield-check text-primary me-2"></i>DocuVerify</h4></div>
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 text-secondary me-2 fs-5"></i> Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link" href="upload.html"><i class="bi bi-cloud-upload text-secondary me-2 fs-5"></i> Upload Document</a></li>
+      <li class="nav-item"><a class="nav-link" href="history.html"><i class="bi bi-clock-history text-secondary me-2 fs-5"></i> Document History</a></li>
+      <li class="nav-item"><a class="nav-link" href="reports.html"><i class="bi bi-file-earmark-text text-secondary me-2 fs-5"></i> Analysis Reports</a></li>
+      <li class="nav-item"><a class="nav-link active" href="settings.html"><i class="bi bi-gear text-primary me-2 fs-5"></i> Settings</a></li>
+    </ul>
+    <hr>
+    <div class="px-2"><button id="logoutBtn" class="btn btn-outline-danger w-100"><i class="bi bi-box-arrow-right"></i> Logout</button></div>
+  </nav>
+
+  <main class="main-content">
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+      <h4 class="fw-bold mb-3">Account Settings</h4>
+      <div class="mb-3">
+        <label class="form-label text-muted small">Registered Email</label>
+        <input type="text" id="settingsEmail" class="form-control bg-light" readonly disabled>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-muted small">User ID</label>
+        <input type="text" id="settingsUserId" class="form-control bg-light font-monospace small" readonly disabled>
+      </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+      <h4 class="fw-bold mb-3">Update Password</h4>
+      <form id="updatePasswordForm" class="row g-3">
+        <div class="col-md-5">
+          <input type="password" class="form-control" id="newPasswordInput" placeholder="New password (min 6 chars)" minlength="6" required>
+        </div>
+        <div class="col-md-5">
+          <input type="password" class="form-control" id="confirmPasswordInput" placeholder="Confirm new password" minlength="6" required>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">Update</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://eqmdiljeffdlvmaqcfru.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_cLnIGyKarOMfhyZz-reSmg_pWxWskE7';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) { window.location.href = 'login.html'; return; }
+      document.getElementById('settingsEmail').value = session.user.email;
+      document.getElementById('settingsUserId').value = session.user.id;
+    });
+
+    document.getElementById('updatePasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const p1 = document.getElementById('newPasswordInput').value;
+      const p2 = document.getElementById('confirmPasswordInput').value;
+      if (p1 !== p2) { alert('Passwords do not match.'); return; }
+
+      const { error } = await _supabase.auth.updateUser({ password: p1 });
+      if (error) {
+        alert('Update failed: ' + error.message);
+      } else {
+        document.getElementById('updatePasswordForm').reset();
+        alert('Password updated successfully.');
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await _supabase.auth.signOut();
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>

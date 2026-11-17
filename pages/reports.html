@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DocuVerify | Analysis Reports</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.jpg">
+  <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/css/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  
+</head>
+<body>
+  <nav class="sidebar d-flex flex-column p-3">
+    <div class="d-flex align-items-center mb-4 px-2 pt-2"><h4 class="fw-bold mb-0 text-dark"><i class="bi bi-shield-check text-primary me-2"></i>DocuVerify</h4></div>
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 text-secondary me-2 fs-5"></i> Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link" href="upload.html"><i class="bi bi-cloud-upload text-secondary me-2 fs-5"></i> Upload Document</a></li>
+      <li class="nav-item"><a class="nav-link" href="history.html"><i class="bi bi-clock-history text-secondary me-2 fs-5"></i> Document History</a></li>
+      <li class="nav-item"><a class="nav-link active" href="reports.html"><i class="bi bi-file-earmark-text text-primary me-2 fs-5"></i> Analysis Reports</a></li>
+      <li class="nav-item"><a class="nav-link" href="settings.html"><i class="bi bi-gear text-secondary me-2 fs-5"></i> Settings</a></li>
+    </ul>
+    <hr>
+    <div class="px-2"><button id="logoutBtn" class="btn btn-outline-danger w-100"><i class="bi bi-box-arrow-right"></i> Logout</button></div>
+  </nav>
+
+  <main class="main-content">
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+      <h4 class="fw-bold mb-2">Analysis Reports & Logs</h4>
+      <p class="text-muted mb-4">Review and download text summaries of your recent screening analyses.</p>
+      <div id="reportsListContainer">
+        <p class="text-muted">No reports generated in this session yet.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://eqmdiljeffdlvmaqcfru.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_cLnIGyKarOMfhyZz-reSmg_pWxWskE7';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let userId = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) { window.location.href = 'login.html'; return; }
+      userId = session.user.id;
+      loadReports();
+    });
+
+    function loadReports() {
+      const history = JSON.parse(localStorage.getItem(`docuverify_history_${userId}`) || '[]');
+      const container = document.getElementById('reportsListContainer');
+      if (history.length === 0) {
+        container.innerHTML = `<p class="text-muted">No reports generated in this session yet.</p>`;
+        return;
+      }
+      container.innerHTML = history.map((h, idx) => `
+        <div class="p-3 bg-light rounded border mb-3 d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="fw-bold mb-1">${h.name} <span class="badge bg-secondary ms-2">${h.classification}</span></h6>
+            <p class="text-muted small mb-0">Analyzed on: ${new Date(h.date).toLocaleString()}</p>
+          </div>
+          <button class="btn btn-outline-primary btn-sm" onclick="window.downloadReport(${idx})">
+            <i class="bi bi-download me-1"></i> Download TXT
+          </button>
+        </div>
+      `).join('');
+    }
+
+    window.downloadReport = function(index) {
+      const history = JSON.parse(localStorage.getItem(`docuverify_history_${userId}`) || '[]');
+      const h = history[index];
+      if (!h) return;
+
+      const reportContent = `DOCUVERIFY - ANALYSIS REPORT\n==================================================\nDate: ${new Date(h.date).toLocaleString()}\nFile: ${h.name}\nClassification: ${h.classification}\n\nSummary:\n${h.summary}\n\nExtracted Text:\n${h.extractedText}`;
+      const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `DocuVerify_Report_${h.name}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await _supabase.auth.signOut();
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
