@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DocuVerify | Upload Document</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.jpg">
+  <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/css/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>  
+</head>
+<body>
+  <nav class="sidebar d-flex flex-column p-3">
+    <div class="d-flex align-items-center mb-4 px-2 pt-2">
+      <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-shield-check text-primary me-2"></i>DocuVerify</h4>
+    </div>
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 text-secondary me-2 fs-5"></i> Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link active" href="upload.html"><i class="bi bi-cloud-upload text-primary me-2 fs-5"></i> Upload Document</a></li>
+      <li class="nav-item"><a class="nav-link" href="history.html"><i class="bi bi-clock-history text-secondary me-2 fs-5"></i> Document History</a></li>
+      <li class="nav-item"><a class="nav-link" href="reports.html"><i class="bi bi-file-earmark-text text-secondary me-2 fs-5"></i> Analysis Reports</a></li>
+      <li class="nav-item"><a class="nav-link" href="settings.html"><i class="bi bi-gear text-secondary me-2 fs-5"></i> Settings</a></li>
+    </ul>
+    <hr>
+    <div class="px-2">
+      <button id="logoutBtn" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="bi bi-box-arrow-right"></i> Logout
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
+      <h4 class="fw-bold mb-2"><i class="bi bi-cloud-upload text-primary me-2"></i>Upload Receipt or Invoice</h4>
+      <p class="text-muted mb-4">Choose a JPG, JPEG, or PNG receipt or invoice. The visual model provides a preliminary forgery screening result; review it manually.</p>
+
+      <div class="row g-4 align-items-center">
+        <div class="col-lg-6">
+          <div class="border border-2 border-dashed rounded-4 p-5 text-center bg-light position-relative">
+            <input type="file" id="documentInput" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="upload-file-input" aria-label="Choose a JPG or PNG receipt or invoice">
+            <i class="bi bi-image fs-1 text-primary mb-2 d-block"></i>
+            <h6 class="fw-bold mb-1">Click to browse or drag & drop image</h6>
+            <div id="selectedFileName" class="text-success small fw-semibold mt-2" aria-live="polite"></div>
+            <div id="fileError" class="small text-danger mt-2" role="alert"></div>
+          </div>
+        </div>
+        <div class="col-lg-6 text-center text-lg-start">
+          <div id="previewContainer" class="upload-preview mb-3" hidden>
+            <img id="imagePreview" class="img-fluid rounded border shadow-sm" alt="Preview">
+          </div>
+          <p class="small text-muted mt-3 mb-2">For model screening, this image is sent to the DocuVerify Hugging Face Space.</p>
+          <button id="runScreenerBtn" class="btn btn-primary btn-lg w-100" disabled>
+            <i class="bi bi-cpu me-1"></i> Run Screening Analysis
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="reportSection" class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white upload-report" hidden>
+      <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <h4 class="fw-bold mb-0">Analysis Report</h4>
+        <span id="reportBadge" class="badge bg-secondary fs-6 px-3 py-2">Processing...</span>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <h6 class="fw-bold text-muted small">Image Quality</h6>
+          <div class="p-3 bg-light rounded border small mb-3 upload-quality-output" id="qualityOutput">Quality check will appear after analysis.</div>
+          <h6 class="fw-bold text-muted small">Visual Tampering Model</h6>
+          <div class="p-3 bg-light rounded border small mb-3" id="visualTamperOutput">Model result will appear after analysis.</div>
+          <h6 class="fw-bold text-muted small">Preliminary Assessment</h6>
+          <div class="p-3 bg-light rounded border small mb-3" id="reportSummary">Evaluating document...</div>
+        </div>
+        <div class="col-md-6">
+          <h6 class="fw-bold text-muted small">Extracted OCR Text</h6>
+          <div class="p-3 bg-white rounded border font-monospace small upload-ocr-output" id="ocrOutput">No text extracted yet.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://eqmdiljeffdlvmaqcfru.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_cLnIGyKarOMfhyZz-reSmg_pWxWskE7';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let currentUser = null;
+    let selectedFile = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) { window.location.href = 'login.html'; return; }
+      currentUser = session.user;
+    });
+
+    const documentInput = document.getElementById('documentInput');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const previewContainer = document.getElementById('previewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const runScreenerBtn = document.getElementById('runScreenerBtn');
+
+    const fileError = document.getElementById('fileError');
+    const dropZone = documentInput.parentElement;
+    const allowedExtensions = /\.(jpe?g|png)$/i;
+
+    async function selectImage(file) {
+      selectedFile = null;
+      runScreenerBtn.disabled = true;
+      previewContainer.hidden = true;
+      document.getElementById('reportSection').hidden = true;
+      fileError.textContent = '';
+      selectedFileName.textContent = '';
+      if (!file) return;
+      if (!allowedExtensions.test(file.name)) {
+        fileError.textContent = 'Choose a JPG, JPEG, or PNG file.';
+        documentInput.value = '';
+        return;
+      }
+
+      try {
+        const header = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+        const isJpeg = header.length >= 3 && header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
+        const isPng = header.length >= 8 && header[0] === 0x89 && header[1] === 0x50 && header[2] === 0x4e && header[3] === 0x47 && header[4] === 0x0d && header[5] === 0x0a && header[6] === 0x1a && header[7] === 0x0a;
+        if (!isJpeg && !isPng) throw new Error('This file is not a valid JPG, JPEG, or PNG image. Choose an image in one of those formats.');
+        const previewUrl = URL.createObjectURL(file);
+        imagePreview.src = previewUrl;
+        try {
+          await imagePreview.decode();
+        } finally {
+          URL.revokeObjectURL(previewUrl);
+        }
+        selectedFile = file;
+        selectedFileName.textContent = 'Selected: ' + file.name;
+        fileError.textContent = '';
+        fileError.textContent = '';
+        runScreenerBtn.textContent = 'Run Screening Analysis';
+        previewContainer.hidden = false;
+        runScreenerBtn.disabled = false;
+      } catch (error) {
+        fileError.textContent = error.message;
+        documentInput.value = '';
+      }
+    }
+    documentInput.addEventListener('change', (event) => selectImage(event.target.files[0]));
+    function detectDocumentType(text) {
+      const normalized = text.toLowerCase().replace(/[^a-z0-9#]+/g, ' ');
+      const invoiceLabel = /\binvoice\b|\binv\s*(?:no|number|#)\b/.test(normalized);
+      const invoiceDetails = /\bbill to\b|\bship to\b|\bamount due\b|\bbalance due\b|\bdue date\b|\bpayment terms\b|\binvoice number\b/.test(normalized);
+      const hasAmount = /(?:₱|\$|€|£|¥)\s*\d|\b(?:php|usd|eur|gbp)\s*\d|\b\d{1,6}\.\d{2}\b|\b(?:total|subtotal|amount due|balance due|paid|cash|change)\b[^\n]{0,12}\d[\d,]*(?:\.\d{2})?/i.test(text);
+      const hasAmountReliable = /(?:\u20B1|\$|\u20AC|\u00A3|\u00A5)\s*\d|\b(?:php|usd|eur|gbp)\s*\d|\b\d{1,6}\.\d{2}\b|\b(?:total|subtotal|amount due|balance due|paid|cash|change)\b[^\n]{0,12}\d[\d,]*(?:\.\d{2})?/i.test(text);
+      if (invoiceLabel && (invoiceDetails || hasAmountReliable)) return 'Invoice';
+      const receiptLabel = /\breceipt\b|\btransaction receipt\b/.test(normalized);
+      const receiptIndicators = [
+        /\bsubtotal\b/, /\btax\b/, /\btotal\b/, /\btender\b/, /\bchange\b/,
+        /\bcashier\b/, /\btransaction\b/, /\bpayment\b/, /\bqty\b|\bquantity\b/,
+        /\bcash\b/, /\bvat\b/, /\bnet\s+amt\b/, /\bticket\s*(?:no|number)\b/,
+        /\bdate\b/, /\bitem\b/, /\bserved\b/
+      ].filter((pattern) => pattern.test(normalized)).length;
+      const amountCount = (text.match(/\b\d{1,3}(?:,\d{3})+(?:\.\d{2})?\b|\b\d+\.\d{2}\b/g) || []).length;
+      if ((receiptLabel && normalized.length >= 7)
+        || (receiptIndicators >= 2 && amountCount >= 2)
+        || (receiptIndicators >= 1 && amountCount >= 3)) return 'Receipt';
+      return null;
+    }
+    function assessImageQuality(image) {
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      const scale = Math.min(1, 512 / Math.max(width, height));
+      const sampleWidth = Math.max(1, Math.round(width * scale));
+      const sampleHeight = Math.max(1, Math.round(height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = sampleWidth;
+      canvas.height = sampleHeight;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(image, 0, 0, sampleWidth, sampleHeight);
+      const pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
+      const gray = new Uint8Array(sampleWidth * sampleHeight);
+      let brightnessTotal = 0;
+      for (let pixel = 0, index = 0; pixel < pixels.length; pixel += 4, index++) {
+        const value = Math.round(.299 * pixels[pixel] + .587 * pixels[pixel + 1] + .114 * pixels[pixel + 2]);
+        gray[index] = value;
+        brightnessTotal += value;
+      }
+      let laplacianTotal = 0;
+      let laplacianSquaredTotal = 0;
+      let samples = 0;
+      for (let y = 1; y < sampleHeight - 1; y += 2) {
+        for (let x = 1; x < sampleWidth - 1; x += 2) {
+          const index = y * sampleWidth + x;
+          const value = 4 * gray[index] - gray[index - 1] - gray[index + 1] - gray[index - sampleWidth] - gray[index + sampleWidth];
+          laplacianTotal += value;
+          laplacianSquaredTotal += value * value;
+          samples++;
+        }
+      }
+      const brightness = brightnessTotal / Math.max(1, gray.length);
+      const laplacianMean = laplacianTotal / Math.max(1, samples);
+      const sharpness = laplacianSquaredTotal / Math.max(1, samples) - laplacianMean * laplacianMean;
+      const issues = [];
+      if (Math.min(width, height) < 320 || Math.max(width, height) < 700) issues.push('low image resolution');
+      if (brightness < 45) issues.push('image may be too dark');
+      if (sharpness < 18) issues.push('image may be blurry');
+      return {
+        width,
+        height,
+        brightness: Math.round(brightness),
+        sharpness: Math.round(sharpness),
+        issues,
+        passed: issues.length === 0
+      };
+    }
+    const DOCUVERIFY_MODEL_SPACE = 'DocuVerify/docuverify-tamper-detector';
+
+    async function runTamperingModel(file) {
+      const { Client, handle_file } = await import('https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js');
+      const client = await Client.connect(DOCUVERIFY_MODEL_SPACE);
+      const response = await client.predict('/predict', [handle_file(file)]);
+      const result = Array.isArray(response.data) ? response.data[0] : response.data;
+      if (!result || typeof result !== 'object' || !('verdict' in result)) {
+        throw new Error('The model returned an unexpected response.');
+      }
+      return result;
+    }
+
+    ['dragenter', 'dragover'].forEach((name) => dropZone.addEventListener(name, (event) => {
+      event.preventDefault();
+      dropZone.classList.add('is-dragging');
+    }));
+    ['dragleave', 'drop'].forEach((name) => dropZone.addEventListener(name, (event) => {
+      event.preventDefault();
+      dropZone.classList.remove('is-dragging');
+    }));
+    dropZone.addEventListener('drop', (event) => selectImage(event.dataTransfer.files[0]));
+    runScreenerBtn.addEventListener('click', async () => {
+      if (runScreenerBtn.textContent === 'Choose Another Image') {
+        documentInput.click();
+        return;
+      }
+      if (!selectedFile) return;
+      const analysisStartedAt = performance.now();
+      runScreenerBtn.disabled = true;
+      runScreenerBtn.textContent = "Screening Analysis in Progress...";
+      document.getElementById('reportSection').hidden = false;
+
+      try {
+        const quality = assessImageQuality(imagePreview);
+        const qualityOutput = document.getElementById('qualityOutput');
+        qualityOutput.textContent = (quality.passed ? 'No obvious quality issue' : 'Review recommended') + ' | ' + quality.width + ' x ' + quality.height + 'px' + (quality.issues.length ? ' | ' + quality.issues.join(', ') : '');
+        let cleanText = '';
+        try {
+          const { data: { text } } = await Tesseract.recognize(selectedFile, 'eng');
+          cleanText = text.trim();
+        } catch (ocrError) {
+          console.error('OCR failed:', ocrError);
+        }
+        const processingTimeMs = Math.round(performance.now() - analysisStartedAt);
+        qualityOutput.textContent += ' | ' + (processingTimeMs / 1000).toFixed(1) + ' sec';
+        document.getElementById('ocrOutput').textContent = cleanText || 'No readable text recognized.';
+        const detectedDocumentType = detectDocumentType(cleanText);
+        if (!detectedDocumentType && quality.passed && cleanText.length >= 20) {
+          document.getElementById('reportBadge').className = 'badge bg-secondary fs-6 px-3 py-2';
+          document.getElementById('reportBadge').textContent = 'Not accepted';
+          document.getElementById('reportSummary').textContent = 'Readable text was found, but it does not match a receipt or invoice. Upload a receipt or invoice image to continue.';
+          runScreenerBtn.disabled = false;
+          runScreenerBtn.textContent = 'Choose Another Image';
+          return;
+        }
+        let visualCheck;
+        try {
+          visualCheck = await runTamperingModel(selectedFile);
+          visualCheck.available = true;
+          document.getElementById('visualTamperOutput').textContent =
+            visualCheck.verdict + ' - ' + Math.round(Number(visualCheck.confidence || 0) * 100) + '% model confidence. ' + visualCheck.message;
+        } catch (modelError) {
+          visualCheck = {
+            available: false,
+            verdict: 'Needs Further Verification',
+            confidence: 0,
+            message: 'The model service is not available yet. Confirm the DocuVerify Hugging Face Space has been created and is running.'
+          };
+          document.getElementById('visualTamperOutput').textContent = visualCheck.message;
+        }
+
+        let classification = 'Needs Further Verification';
+        let badgeClass = 'status-needs-verification';
+        let summaryText = 'Review the original document and verify it with the issuer.';
+        if (!quality.passed || cleanText.length < 20 || !detectedDocumentType || !visualCheck.available) {
+          classification = 'Needs Further Verification';
+          badgeClass = 'status-needs-verification';
+          summaryText = !quality.passed
+            ? 'Image quality needs review: ' + quality.issues.join(', ') + '. Try a clearer image and review the original.'
+            : (!visualCheck.available
+              ? visualCheck.message
+              : (!detectedDocumentType
+                ? 'The image was screened, but OCR could not confirm whether it is a receipt or invoice. Review the original document manually.'
+                : 'OCR found too little readable text. Review the original document manually.'));
+        } else if (visualCheck.verdict === 'Suspicious') {
+          classification = 'Suspicious';
+          badgeClass = 'status-suspicious-red';
+          summaryText = visualCheck.message;
+        } else if (visualCheck.verdict === 'Potentially Genuine') {
+          classification = 'Potentially Genuine';
+          badgeClass = 'status-gen-green';
+          summaryText = visualCheck.message;
+        } else {
+          summaryText = visualCheck.message || 'The model could not reach a clear result. Review the document manually.';
+        }
+
+        document.getElementById('reportBadge').className = `badge ${badgeClass} fs-6 px-3 py-2`;
+        document.getElementById('reportBadge').textContent = classification;
+        document.getElementById('reportSummary').textContent = summaryText;
+
+        // Record structured precisely to match dashboard.html requirements
+        const record = {
+          fileName: selectedFile.name,
+          documentType: detectedDocumentType || 'Unconfirmed',
+          imageQuality: quality.passed ? 'No obvious quality issue' : quality.issues.join(', '),
+          visualTamperingCheck: visualCheck.message,
+          visualTamperingSignal: visualCheck.available && visualCheck.verdict === 'Suspicious',
+          modelLabel: visualCheck.label || '',
+          modelConfidence: visualCheck.confidence || 0,
+          processingTimeMs: processingTimeMs,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          classification: classification,
+          summary: summaryText,
+          extractedText: cleanText
+        };
+
+        let history = JSON.parse(localStorage.getItem(`docuverify_history_${currentUser.id}`) || '[]');
+        history.unshift(record);
+        localStorage.setItem(`docuverify_history_${currentUser.id}`, JSON.stringify(history));
+
+        runScreenerBtn.disabled = true;
+        runScreenerBtn.textContent = 'Screening Complete';
+
+      } catch (err) {
+        alert('OCR Error: ' + err.message);
+        runScreenerBtn.disabled = false;
+        runScreenerBtn.textContent = "Run Screening Analysis";
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await _supabase.auth.signOut();
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>

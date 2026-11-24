@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DocuVerify | Login</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.jpg">
+  <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/css/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row auth-wrapper">
+      <!-- Form side -->
+      <div class="col-lg-6 d-flex align-items-center justify-content-center py-5 order-2 order-lg-1">
+        <div class="w-100 auth-form-panel">
+          <a href="../index.html" class="navbar-brand fw-bold fs-4 text-decoration-none text-dark d-block mb-4"><i class="bi bi-shield-check text-primary"></i> DocuVerify</a>
+          <h3 class="fw-bold">Welcome back</h3>
+          <p class="text-muted">Enter your credentials to access your account.</p>
+
+          <form id="loginForm">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email address</label>
+              <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
+            </div>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <label for="password" class="form-label">Password</label>
+                <a href="#" id="forgotPasswordLink" class="small text-decoration-none">Forgot password?</a>
+              </div>
+              <input type="password" class="form-control" id="password" required>
+            </div>
+            <div class="form-check mb-4">
+              <input class="form-check-input" type="checkbox" id="remember">
+              <label class="form-check-label" for="remember">Remember me</label>
+            </div>
+            <div id="loginError" class="alert alert-danger d-none py-2 mb-3"></div>
+            <button type="submit" class="btn btn-brand w-100 py-2" id="submitBtn">Login</button>
+          </form>
+
+          <div id="forgotPasswordPanel" class="auth-recovery-panel d-none" aria-live="polite">
+            <h3 class="fw-bold">Reset your password</h3>
+            <p class="text-muted">Enter your account email and we’ll send you a secure reset link.</p>
+            <form id="forgotPasswordForm">
+              <div class="mb-3"><label for="resetEmail" class="form-label">Email address</label><input type="email" class="form-control" id="resetEmail" autocomplete="email" required></div>
+              <div id="resetMessage" class="small mb-3" role="status" aria-live="polite"></div>
+              <button type="submit" class="btn btn-brand w-100 py-2" id="resetSubmitBtn">Send reset link</button>
+            </form>
+            <button type="button" id="backToLoginFromReset" class="btn btn-link px-0 mt-3 text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Back to login</button>
+          </div>
+
+          <div id="recoveryPanel" class="auth-recovery-panel d-none" aria-live="polite">
+            <h3 class="fw-bold">Choose a new password</h3>
+            <p class="text-muted">Set a new password for your DocuVerify account.</p>
+            <form id="recoveryForm">
+              <div class="mb-3"><label for="newPassword" class="form-label">New password</label><input type="password" class="form-control" id="newPassword" minlength="6" autocomplete="new-password" required></div>
+              <div class="mb-3"><label for="confirmNewPassword" class="form-label">Confirm new password</label><input type="password" class="form-control" id="confirmNewPassword" minlength="6" autocomplete="new-password" required></div>
+              <div id="recoveryMessage" class="small mb-3" role="status" aria-live="polite"></div>
+              <button type="submit" class="btn btn-brand w-100 py-2" id="recoverySubmitBtn">Update password</button>
+            </form>
+          </div>
+
+          <p id="signupPrompt" class="text-center mt-4 mb-0">Don't have an account? <a href="signup.html">Sign up</a></p>
+        </div>
+      </div>
+
+      <!-- Image side -->
+      <div class="col-lg-6 auth-image login d-flex align-items-end p-5 order-1 order-lg-2">
+        <div class="text-white">
+          <h2 class="fw-bold">AI-Powered Verification</h2>
+          <p class="mb-0">Detect receipt and invoice fraud instantly with advanced machine learning.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://eqmdiljeffdlvmaqcfru.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_cLnIGyKarOMfhyZz-reSmg_pWxWskE7';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginForm = document.getElementById('loginForm');
+    const forgotPanel = document.getElementById('forgotPasswordPanel');
+    const recoveryPanel = document.getElementById('recoveryPanel');
+    const signupPrompt = document.getElementById('signupPrompt');
+    const loginError = document.getElementById('loginError');
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+
+    function showAuthPanel(panel) {
+      loginForm.classList.toggle('d-none', panel !== 'login');
+      forgotPanel.classList.toggle('d-none', panel !== 'forgot');
+      recoveryPanel.classList.toggle('d-none', panel !== 'recovery');
+      signupPrompt.classList.toggle('d-none', panel !== 'login');
+      if (panel !== 'login') loginError.classList.add('d-none');
+    }
+
+    if (hashParams.get('type') === 'recovery') {
+      showAuthPanel('recovery');
+    } else if (hashParams.get('error_description') || hashParams.get('error')) {
+      loginError.textContent = hashParams.get('error_description') || 'This password reset link is invalid or expired. Request a new link and try again.';
+      loginError.classList.remove('d-none');
+    }
+
+    _supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') showAuthPanel('recovery');
+    });
+
+    document.getElementById('forgotPasswordLink').addEventListener('click', (event) => {
+      event.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      document.getElementById('resetEmail').value = email;
+      document.getElementById('resetMessage').textContent = '';
+      showAuthPanel('forgot');
+    });
+
+    document.getElementById('backToLoginFromReset').addEventListener('click', () => showAuthPanel('login'));
+
+    document.getElementById('forgotPasswordForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = document.getElementById('resetSubmitBtn');
+      const message = document.getElementById('resetMessage');
+      const email = document.getElementById('resetEmail').value.trim();
+      button.disabled = true;
+      button.textContent = 'Sending…';
+      message.className = 'small mb-3 text-muted';
+      message.textContent = '';
+
+      // The exact login URL must also be allowed in Supabase Auth redirect URL settings.
+      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const { error } = await _supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) {
+        message.className = 'small mb-3 text-danger';
+        message.textContent = error.message;
+      } else {
+        message.className = 'small mb-3 text-success';
+        message.textContent = 'If an account exists for that email, a password reset link has been sent. Check your inbox and spam folder.';
+      }
+      button.disabled = false;
+      button.textContent = 'Send reset link';
+    });
+
+    document.getElementById('recoveryForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const password = document.getElementById('newPassword').value;
+      const confirmation = document.getElementById('confirmNewPassword').value;
+      const message = document.getElementById('recoveryMessage');
+      const button = document.getElementById('recoverySubmitBtn');
+      if (password !== confirmation) {
+        message.className = 'small mb-3 text-danger';
+        message.textContent = 'The passwords do not match.';
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = 'Updating…';
+      message.textContent = '';
+      const { error } = await _supabase.auth.updateUser({ password });
+      if (error) {
+        message.className = 'small mb-3 text-danger';
+        message.textContent = error.message;
+        button.disabled = false;
+        button.textContent = 'Update password';
+        return;
+      }
+
+      await _supabase.auth.signOut();
+      document.getElementById('recoveryForm').reset();
+      showAuthPanel('login');
+      loginError.className = 'alert alert-success py-2 mb-3';
+      loginError.textContent = 'Your password has been updated. Sign in with your new password.';
+      loginError.classList.remove('d-none');
+      button.disabled = false;
+      button.textContent = 'Update password';
+      window.history.replaceState(null, '', window.location.pathname);
+    });
+
+    loginForm.addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Logging in…';
+      loginError.className = 'alert alert-danger d-none py-2 mb-3';
+      loginError.textContent = '';
+
+      const { error } = await _supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        loginError.textContent = 'Invalid email or password. Please check your credentials or sign up first.';
+        loginError.classList.remove('d-none');
+        btn.disabled = false;
+        btn.textContent = 'Login';
+        return;
+      }
+      window.location.href = 'dashboard.html';
+    });
+  </script>
+</body>
+</html>

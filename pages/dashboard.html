@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DocuVerify | Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/images/logo.jpg">
+  <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/css/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar d-flex flex-column p-3">
+    <div class="d-flex align-items-center mb-4 px-2 pt-2">
+      <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-shield-check text-primary me-2"></i>DocuVerify</h4>
+    </div>
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li class="nav-item"><a class="nav-link active" href="dashboard.html"><i class="bi bi-speedometer2 text-primary me-2 fs-5"></i> Dashboard</a></li>
+      <li class="nav-item"><a class="nav-link" href="upload.html"><i class="bi bi-cloud-upload text-secondary me-2 fs-5"></i> Upload Document</a></li>
+      <li class="nav-item"><a class="nav-link" href="history.html"><i class="bi bi-clock-history text-secondary me-2 fs-5"></i> Document History</a></li>
+      <li class="nav-item"><a class="nav-link" href="reports.html"><i class="bi bi-file-earmark-text text-secondary me-2 fs-5"></i> Analysis Reports</a></li>
+      <li class="nav-item"><a class="nav-link" href="settings.html"><i class="bi bi-gear text-secondary me-2 fs-5"></i> Settings</a></li>
+    </ul>
+    <hr>
+    <div class="px-2">
+      <button id="logoutBtn" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2">
+        <i class="bi bi-box-arrow-right"></i> Logout
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center bg-white p-3 rounded-4 shadow-sm mb-4">
+      <div>
+        <h5 class="fw-bold mb-0">Document Fraud Detection Dashboard</h5>
+        <p class="text-muted small mb-0">Monitor and manage your verification metrics.</p>
+      </div>
+      <span class="badge bg-light text-dark border px-3 py-2">
+        <i class="bi bi-person-circle text-primary me-1"></i> <span id="userEmailDisplay">Loading...</span>
+      </span>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+      <h2 class="fw-bold mb-1">Welcome to DocuVerify!</h2>
+      <p class="text-muted mb-0">Upload and examine receipt and invoice images using OCR and deep learning technology.</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-sm-6 col-xl-3"><div class="card border-0 shadow-sm rounded-4 p-3 bg-white"><span class="text-muted small">Documents Analyzed</span><h2 class="fw-bold mb-0 text-dark" id="statTotal">0</h2></div></div>
+      <div class="col-sm-6 col-xl-3"><div class="card border-0 shadow-sm rounded-4 p-3 bg-white"><span class="text-muted small">Needs Verification</span><h2 class="fw-bold mb-0 text-info" id="statNeedsVer">0</h2></div></div>
+      <div class="col-sm-6 col-xl-3"><div class="card border-0 shadow-sm rounded-4 p-3 bg-white"><span class="text-muted small">Potentially Genuine</span><h2 class="fw-bold mb-0 text-success" id="statGenuine">0</h2></div></div>
+      <div class="col-sm-6 col-xl-3"><div class="card border-0 shadow-sm rounded-4 p-3 bg-white"><span class="text-muted small">Suspicious Documents</span><h2 class="fw-bold mb-0 text-danger" id="statSuspicious">0</h2></div></div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-xl-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                    <div class="classification-guide-heading mb-4">
+            <span class="page-kicker">RESULTS AT A GLANCE</span>
+            <h5 class="fw-bold mb-1">Classification guide</h5>
+            <p class="small text-muted mb-0">Understand what each screening result tells you.</p>
+          </div>
+          <div class="classification-guide-list">
+            <div class="classification-guide-item">
+              <span class="guide-status-dot guide-status-genuine" aria-hidden="true"></span>
+              <div><h6 class="guide-title">Potentially Genuine</h6><p class="guide-copy">No obvious warning term was found in the OCR text. This does not prove the document is authentic.</p></div>
+            </div>
+            <div class="classification-guide-item">
+              <span class="guide-status-dot guide-status-review" aria-hidden="true"></span>
+              <div><h6 class="guide-title">Needs Further Verification</h6><p class="guide-copy">Text was unclear or expected transaction details were not recognized. Review the original document.</p></div>
+            </div>
+            <div class="classification-guide-item">
+              <span class="guide-status-dot guide-status-suspicious" aria-hidden="true"></span>
+              <div><h6 class="guide-title">Suspicious</h6><p class="guide-copy">OCR found a warning term. Verify it with the issuer; a text flag alone is not proof of fraud.</p></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-xl-6">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Recent Document Analyses</h5>
+            <div class="d-flex gap-2">
+              <button id="clearHistoryBtn" class="btn btn-outline-danger btn-sm">Clear History</button>
+              <a href="upload.html" class="btn btn-primary btn-sm">+ New Upload</a>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Document</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody id="recentTableBody">
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-4">No recent documents analyzed yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://eqmdiljeffdlvmaqcfru.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_cLnIGyKarOMfhyZz-reSmg_pWxWskE7';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      const user = session.user;
+      document.getElementById('userEmailDisplay').textContent = user.email;
+
+      const historyKey = `docuverify_history_${user.id}`;
+      loadDashboardData(historyKey);
+
+      // Handle Clear History functionality
+      document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all history records?')) {
+          localStorage.removeItem(historyKey);
+          loadDashboardData(historyKey);
+        }
+      });
+    });
+
+    function loadDashboardData(historyKey) {
+      const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+      
+      document.getElementById('statTotal').textContent = history.length;
+      document.getElementById('statGenuine').textContent = history.filter(h => {
+        const val = (h.classification || h.result || h.status || h.verdict || '').toLowerCase();
+        return val.includes('genuine') || val.includes('potentionally');
+      }).length;
+
+      document.getElementById('statNeedsVer').textContent = history.filter(h => {
+        const val = (h.classification || h.result || h.status || h.verdict || '').toLowerCase();
+        return val.includes('needs') || val.includes('further') || val.includes('verification');
+      }).length;
+
+      document.getElementById('statSuspicious').textContent = history.filter(h => {
+        const val = (h.classification || h.result || h.status || h.verdict || '').toLowerCase();
+        return val.includes('suspicious');
+      }).length;
+
+      const tableBody = document.getElementById('recentTableBody');
+      if (history.length > 0) {
+        tableBody.innerHTML = history.slice(0, 5).map(item => {
+          const rawClass = item.classification || item.result || item.status || item.verdict || '';
+          
+          let classText = 'Potentially Genuine';
+          let badgeClass = 'status-gen-green';
+
+          const lower = rawClass.toLowerCase();
+          if (lower.includes('suspicious')) {
+            classText = 'Suspicious';
+            badgeClass = 'status-suspicious-red';
+          } else if (lower.includes('needs') || lower.includes('further') || lower.includes('verification')) {
+            classText = 'Needs Further Verification';
+            badgeClass = 'status-needs-verification';
+          } else if (lower.includes('genuine') || lower.includes('potentionally')) {
+            classText = 'Potentially Genuine';
+            badgeClass = 'status-gen-green';
+          }
+
+          return `
+            <tr>
+              <td class="fw-semibold">${item.fileName || item.name || 'Document'}</td>
+              <td>${item.documentType || item.type || 'Receipt'}</td>
+              <td class="text-muted small">${item.date || 'Today'}</td>
+              <td><span class="badge ${badgeClass} px-3 py-2">${classText}</span></td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center text-muted py-4">No recent documents analyzed yet.</td>
+          </tr>
+        `;
+      }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await _supabase.auth.signOut();
+      window.location.href = 'login.html';
+    });
+  </script>
+</body>
+</html>
